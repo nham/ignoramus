@@ -125,14 +125,37 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
     // converts a pair (p, q) of coordinates into an edit command
     // that will take p -> q. fails if a single command won't work
     fn coords_to_cmd(p: (uint, uint), q: (uint, uint)) -> EditCommand {
+        // TODO: explain why the numbers are right. basically, strings are 0-indexed,
+        // but nodes are kind of 1-indexed
         let ((a, b), (c, d)) = (p, q);
         match (c - a, d - b) {
             (1, 1) => Noop,
-            (1, 0) => Del(c),
-            (0, 1) => Ins(d),
+            (1, 0) => Del(c - 1),
+            (0, 1) => Ins(d - 1),
             _ => fail!("Cannot compute edit command for the given coords."),
         }
     }
+
+    // called when we pop a node off the queue. since we don't generate the edit
+    // graph ahead of time, we generate it on the fly.
+    let add_children = |tr: &mut Tree<EditCommand>, i: uint, j: uint| {
+        let coord = (i, j);
+        let bot = (i+1, j);
+        if i < m && !tr.node_exists(bot) {
+            tr.add_child(coord, bot, Del(i));
+        }
+
+        let right = (i, j+1);
+        if j < n && !tr.node_exists(right) {
+            tr.add_child(coord, right, Ins(j));
+        }
+        println!("after bot and right");
+
+        let diag = (i+1, j+1);
+        if i < m && j < n && x[i] == y[j] && !tr.node_exists(diag) {
+            tr.add_child(coord, diag, Noop);
+        }
+    };
 
     queue.push_back( ((0u, 0u), None) );
     discovered.insert((0u, 0u));
@@ -150,21 +173,8 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
 
                 if i == m && j == n { break; }
 
-                println!("i = {}, j = {}", i, j);
-                let bot = (i+1, j);
-                if i < m && !tree.node_exists(bot) {
-                    tree.add_child(coord, bot, Del(i+1));
-                }
-
-                let right = (i, j+1);
-                if j < n && !tree.node_exists(right) {
-                    tree.add_child(coord, right, Ins(j+1));
-                }
-
-                let diag = (i+1, j+1);
-                if i < m && j < n && x[i+1] == y[j+1] && !tree.node_exists(diag) {
-                    tree.add_child(coord, diag, Noop);
-                }
+                println!("i = {}, j = {}. now adding children", i, j);
+                add_children(&mut tree, i, j);
 
                 for x in tree.ch_iter(coord).unwrap() {
                     if !discovered.contains(x) {
