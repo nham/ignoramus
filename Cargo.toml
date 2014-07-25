@@ -1,0 +1,11 @@
+[package]
+
+name = "ignoramus"
+version = "0.1.0"
+authors = [ "Nick Hamann <nick@wabbo.org>" ]
+
+[[bin]]
+
+name = "ignoramus"
+path = "src/ignoramus.rs"
+
