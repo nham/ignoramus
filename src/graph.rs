@@ -1,10 +1,10 @@
 pub use std::collections::{RingBuf, HashMap, HashSet, Deque};
-use std::iter;
 
 use self::tree::Tree;
 
 mod tree {
     use super::{HashMap, HashSet};
+    use std::collections::hashmap::SetItems;
 
     type NodeIndex = (uint, uint);
     type NodeIndexSet = HashSet<NodeIndex>;
@@ -50,8 +50,16 @@ mod tree {
             ind
         }
 
+        pub fn node_exists(&self, i: NodeIndex) -> bool {
+            self.nodes.contains_key(&i)
+        }
+
         pub fn path_iter<'a>(&'a self, i: NodeIndex) -> NodeValues<'a, T> {
             NodeValues { tree: self, curr: Some(i) }
+        }
+
+        pub fn ch_iter(&self, i: NodeIndex) -> Option<SetItems<NodeIndex>> {
+            self.children.find(&i).map(|s| s.iter())
         }
     }
 
@@ -75,7 +83,7 @@ mod tree {
 }
 
 
-#[deriving(PartialEq, Eq)]
+#[deriving(PartialEq, Eq, Show)]
 enum EditCommand {
     Del(uint),
     Ins(uint),
@@ -108,7 +116,7 @@ enum EditCommand {
 ///
 ///     return the path from (0,0) to (m, n)
 ///
-fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
+pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
     let (m, n) = (x.len(), y.len());
     let mut tree = Tree::new();
     let mut discovered = HashSet::new();
@@ -142,12 +150,23 @@ fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
 
                 if i == m && j == n { break; }
 
-                let mut vec = vec!((i+1, j), (i, j+1));
-                if x[i+1] == y[j+1] {
-                    vec.push((i+1, j+1));
+                println!("i = {}, j = {}", i, j);
+                let bot = (i+1, j);
+                if i < m && !tree.node_exists(bot) {
+                    tree.add_child(coord, bot, Del(i+1));
                 }
 
-                for x in vec.iter() {
+                let right = (i, j+1);
+                if j < n && !tree.node_exists(right) {
+                    tree.add_child(coord, right, Ins(j+1));
+                }
+
+                let diag = (i+1, j+1);
+                if i < m && j < n && x[i+1] == y[j+1] && !tree.node_exists(diag) {
+                    tree.add_child(coord, diag, Noop);
+                }
+
+                for x in tree.ch_iter(coord).unwrap() {
                     if !discovered.contains(x) {
                         queue.push_back((*x, Some(coord)));
                         discovered.insert(*x);
