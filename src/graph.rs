@@ -83,7 +83,7 @@ enum EditCommand {
 }
 
 /// Compute the shortest edit script that transforms x into y. This is a 
-/// modification of brdeath-first traversal.
+/// modification of breadth-first traversal.
 ///
 /// Pseudocode:
 /// 
@@ -100,7 +100,7 @@ enum EditCommand {
 ///
 ///         vec = [(i+1, j), (i, j+1)]
 ///         if x_{i+1} = x_{j+1} 
-///         then v.push((i+1, j+1))
+///         then vec.push((i+1, j+1))
 ///         for w in vec:
 ///             if w is not yet discovered
 ///                 S.insert(w)
