@@ -126,13 +126,14 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
     // converts a pair (p, q) of coordinates into an edit command
     // that will take p -> q. fails if a single command won't work
     fn coords_to_cmd(p: (uint, uint), q: (uint, uint)) -> EditCommand {
-        // TODO: explain why the numbers are right. basically, strings are 0-indexed,
-        // but nodes are kind of 1-indexed
+        // being at (i, j) means that our cursors are at x[i] and y[j]
+        // so a move to (i+1, j) means "delete x[i]", and similarly (i, j+1)
+        // means "insert y[j]"
         let ((a, b), (c, d)) = (p, q);
         match (c - a, d - b) {
             (1, 1) => Noop,
-            (1, 0) => Del(c - 1),
-            (0, 1) => Ins(d - 1),
+            (1, 0) => Del(a),
+            (0, 1) => Ins(b),
             _ => fail!("Cannot compute edit command for the given coords."),
         }
     }
@@ -150,7 +151,6 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
         if j < n && !tr.node_exists(right) {
             tr.add_child(coord, right, Ins(j));
         }
-        println!("after bot and right");
 
         let diag = (i+1, j+1);
         if i < m && j < n && x[i] == y[j] && !tr.node_exists(diag) {
@@ -186,5 +186,7 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
         }
     }
 
-    tree.path_iter((m, n)).map(|&x| x).filter(|&cmd| cmd != Noop).collect()
+    let mut v: Vec<EditCommand> = tree.path_iter((m, n)).map(|&x| x).filter(|&cmd| cmd != Noop).collect();
+    v.reverse();
+    v
 }
