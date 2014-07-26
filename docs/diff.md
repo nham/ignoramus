@@ -89,6 +89,10 @@ The solution I illustrate below turns the *shortest edit script problem* into th
 
 We consider a state machine with $(m+1)(n+1)$ number of states, each state indexed by a pair $(i, j)$ with $0 \leq i \leq m$ and $0 \leq j \leq n$. Being in state $(i, j)$ means that we seek to apply edit commands to turn $(x_i, \ldots, x_{m-1})$ into $(y_j, \ldots, y_{n-1})$.
 
-For every pair $(i, j)$ with $i < m$, there is a transition to $(i+1, j)$. We interpret this transition as deleting $x_i$. Similarly, for every pair $(i , j)$ with $j < n$, there is a transition to $(i, j+1)$, and we interpret this transition as inserting $y_j$.
+For every pair $(i, j)$ with $i < m$, there is a transition to $(i+1, j)$. We interpret this transition as yielding a command to delete $x_i$. Similarly, for every pair $(i , j)$ with $j < n$, there is a transition to $(i, j+1)$, and we interpret this transition as a command to insert $y_j$.
 
-For any pair $(i, j)$ with both $i < m$ and $j < n$, there is a transition to $(i+1, j+1)$ if and only if $x_i = y_j$. The interpretation here is that these elements of the sequence match up, so we can "advance our cursors" without inserting or deleting anything.
+For any pair $(i, j)$ with both $i < m$ and $j < n$, there is a transition to $(i+1, j+1)$ if and only if $x_i = y_j$. The interpretation here is that these elements of the sequence match up, so we can skip past these inputs without inserting or deleting anything.
+
+Given this graph, we need to find the shortest path from $(0, 0)$ to $(m, n)$. This will give us the shortest edit script that transforms $x$ into $y$, and solves the problem.
+
+Luckily for us, finding the shortest path between two nodes in a graph is a problem that has already been [thoroughly explored](http://en.wikipedia.org/wiki/Shortest_path_problem). Since our graph is unweighted, we can use plain old [breadth-first traversala](http://en.wikipedia.org/wiki/Breadth-first_search).
