@@ -63,6 +63,7 @@ mod tree {
         }
     }
 
+    // iterates through the node values in the path going from a node to the root.
     struct NodeValues<'a, T> {
         tree: &'a Tree<T>,
         curr: Option<NodeIndex>,
@@ -163,13 +164,12 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
         match queue.pop_front() {
             None => break,
             Some((coord@(i, j), parent)) => {
-                let new_ind = 
-                    match parent {
-                        None => tree.add_root(coord, Noop),
-                        Some(p) => {
-                            tree.add_child(p, coord, coords_to_cmd(p, coord))
-                        },
-                    };
+                match parent {
+                    None => tree.add_root(coord, Noop),
+                    Some(p) => {
+                        tree.add_child(p, coord, coords_to_cmd(p, coord))
+                    },
+                };
 
                 if i == m && j == n { break; }
 
