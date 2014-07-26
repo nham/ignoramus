@@ -88,8 +88,9 @@ mod tree {
 enum EditCommand {
     Del(uint),
     Ins(uint),
-    Noop,
 }
+
+type MaybeCmd = Option<EditCommand>;
 
 /// Compute the shortest edit script that transforms x into y. This is a 
 /// modification of breadth-first traversal.
@@ -125,36 +126,36 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
 
     // converts a pair (p, q) of coordinates into an edit command
     // that will take p -> q. fails if a single command won't work
-    fn coords_to_cmd(p: (uint, uint), q: (uint, uint)) -> EditCommand {
+    fn coords_to_cmd(p: (uint, uint), q: (uint, uint)) -> MaybeCmd {
         // being at (i, j) means that our cursors are at x[i] and y[j]
         // so a move to (i+1, j) means "delete x[i]", and similarly (i, j+1)
         // means "insert y[j]"
         let ((a, b), (c, d)) = (p, q);
         match (c - a, d - b) {
-            (1, 1) => Noop,
-            (1, 0) => Del(a),
-            (0, 1) => Ins(b),
+            (1, 1) => None,
+            (1, 0) => Some(Del(a)),
+            (0, 1) => Some(Ins(b)),
             _ => fail!("Cannot compute edit command for the given coords."),
         }
     }
 
     // called when we pop a node off the queue. since we don't generate the edit
     // graph ahead of time, we generate it on the fly.
-    let add_children = |tr: &mut Tree<EditCommand>, i: uint, j: uint| {
+    let add_children = |tr: &mut Tree<MaybeCmd>, i: uint, j: uint| {
         let coord = (i, j);
         let bot = (i+1, j);
         if i < m && !tr.node_exists(bot) {
-            tr.add_child(coord, bot, Del(i));
+            tr.add_child(coord, bot, Some(Del(i)));
         }
 
         let right = (i, j+1);
         if j < n && !tr.node_exists(right) {
-            tr.add_child(coord, right, Ins(j));
+            tr.add_child(coord, right, Some(Ins(j)));
         }
 
         let diag = (i+1, j+1);
         if i < m && j < n && x[i] == y[j] && !tr.node_exists(diag) {
-            tr.add_child(coord, diag, Noop);
+            tr.add_child(coord, diag, None);
         }
     };
 
@@ -165,7 +166,7 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
             None => break,
             Some((coord@(i, j), parent)) => {
                 match parent {
-                    None => tree.add_root(coord, Noop),
+                    None => tree.add_root(coord, None),
                     Some(p) => {
                         tree.add_child(p, coord, coords_to_cmd(p, coord))
                     },
@@ -186,7 +187,10 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
         }
     }
 
-    let mut v: Vec<EditCommand> = tree.path_iter((m, n)).map(|&x| x).filter(|&cmd| cmd != Noop).collect();
+    let mut v: Vec<EditCommand> = tree.path_iter((m, n))
+                                      .filter(|&cmd| *cmd != None)
+                                      .map(|&x| x.unwrap())
+                                      .collect();
     v.reverse();
     v
 }
