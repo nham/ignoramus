@@ -85,3 +85,10 @@ In order to make progress we set aside any other considerations and try to solve
 Write an algorithm that returns, for any given sequences $x = (x_0, \ldots, x_{m-1})$ and $y = (y_0, \ldots, y_{n-1})$, a *shortest* edit script $(c_0, \ldots c_k)$ turning $x$ into $y$, where each element $c_i$ in the script is either $I a$ ("Insert $a$") for some $0 \leq a < m$ or $D b$ ("Delete $b$") for some $0 \leq b < n$.
 
 ## A solution
+The solution I illustrate below turns the *shortest edit script problem* into the problem of finding a shortest path in a certain directed graph. All credit for this idea goes to Eugene Myers, who outlines it in his paper "An O(ND) Difference Algorithm and Its Variations". Also I think this algorithm is non-optimal, so if you want the actual "Myers diff" algorithm you should read that paper.
+
+We consider a state machine with $(m+1)(n+1)$ number of states, each state indexed by a pair $(i, j)$ with $0 \leq i \leq m$ and $0 \leq j \leq n$. Being in state $(i, j)$ means that we seek to apply edit commands to turn $(x_i, \ldots, x_{m-1})$ into $(y_j, \ldots, y_{n-1})$.
+
+For every pair $(i, j)$ with $i < m$, there is a transition to $(i+1, j)$. We interpret this transition as deleting $x_i$. Similarly, for every pair $(i , j)$ with $j < n$, there is a transition to $(i, j+1)$, and we interpret this transition as inserting $y_j$.
+
+For any pair $(i, j)$ with both $i < m$ and $j < n$, there is a transition to $(i+1, j+1)$ if and only if $x_i = y_j$. The interpretation here is that these elements of the sequence match up, so we can "advance our cursors" without inserting or deleting anything.
