@@ -85,7 +85,7 @@ mod tree {
 
 
 #[deriving(PartialEq, Eq, Show)]
-enum EditCommand {
+pub enum EditCommand {
     Del(uint),
     Ins(uint),
 }
