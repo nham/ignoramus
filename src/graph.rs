@@ -143,19 +143,19 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
     // graph ahead of time, we generate it on the fly.
     let add_children = |tr: &mut Tree<MaybeCmd>, i: uint, j: uint| {
         let coord = (i, j);
-        let bot = (i+1, j);
-        if i < m && !tr.node_exists(bot) {
-            tr.add_child(coord, bot, Some(Del(i)));
-        }
-
-        let right = (i, j+1);
-        if j < n && !tr.node_exists(right) {
-            tr.add_child(coord, right, Some(Ins(j)));
-        }
-
         let diag = (i+1, j+1);
         if i < m && j < n && x[i] == y[j] && !tr.node_exists(diag) {
             tr.add_child(coord, diag, None);
+        } else {
+            let bot = (i+1, j);
+            if i < m && !tr.node_exists(bot) {
+                tr.add_child(coord, bot, Some(Del(i)));
+            }
+
+            let right = (i, j+1);
+            if j < n && !tr.node_exists(right) {
+                tr.add_child(coord, right, Some(Ins(j)));
+            }
         }
     };
 
@@ -174,7 +174,6 @@ pub fn ses<T: Eq>(x: &[T], y: &[T]) -> Vec<EditCommand> {
 
                 if i == m && j == n { break; }
 
-                println!("i = {}, j = {}. now adding children", i, j);
                 add_children(&mut tree, i, j);
 
                 for x in tree.ch_iter(coord).unwrap() {
