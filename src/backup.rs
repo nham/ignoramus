@@ -15,24 +15,18 @@ fn replace_front(path1: &Path, path2: &Path, n: uint) -> Path {
 // TODO: probably doesnt correctly handle symlinks?
 fn copy_dir_ignore(from: &Path, to: &Path, ignore: &HashSet<Path>) -> IoResult<()> {
     if !from.is_dir() {
-        fail!("The source path is not a directory");
+        fail!("source isn't a directory");
     }
 
-    let contents = 
-        match readdir(from) {
-            Err(_) => fail!("Couldn't do a thing"),
-            Ok(v) => v,
-        };
+    try!(mkdir(to, try!(stat(from)).perm));
+    println!("created {}", to.display());
 
-    for p in contents.iter() {
+    for p in try!(readdir(from)).iter() {
         if ignore.contains(p) {
             continue;
         } else {
             let pnew = replace_front(to, p, from.as_vec().len());
             if p.is_dir() {
-                let fstat = stat(p);
-                try!(mkdir(&pnew, fstat.unwrap().perm));
-                println!("created {}", pnew.display());
                 try!(copy_dir_ignore(p, &pnew, ignore));
             } else {
                 try!(copy(p, &pnew));
@@ -49,5 +43,5 @@ fn main() {
     let mut ignore = HashSet::new();
     ignore.insert(Path::new(".igno"));
     ignore.insert(Path::new(".git"));
-    copy_dir_ignore(&Path::new("foo"), &Path::new("bar"), &ignore);
+    println!("{}", copy_dir_ignore(&Path::new("foo"), &Path::new("bar"), &ignore));
 }
