@@ -1,31 +1,32 @@
 use std::io::IoResult;
-use std::io::fs::{readdir, copy, stat, mkdir};
+use std::io::fs::{readdir, copy, lstat, mkdir};
 use std::collections::HashSet;
 
-// creates a new path that is a concatenation of path1 + path2[n:], where
-// path2[n:] denotes the bytes of path2 starting at the nth byte (zero-indexed)
-// (essentially, it "replaces" the first n bytes of path2 with path1)
-fn replace_front(path1: &Path, path2: &Path, n: uint) -> Path {
-    let mut vec = Vec::from_slice(path1.as_vec());
-    vec.push_all( path2.as_vec().slice_from(n) );
-    Path::new(vec)
-}
 
-
-// TODO: probably doesnt correctly handle symlinks?
 fn copy_dir_ignore(from: &Path, to: &Path, ignore: &HashSet<Path>) -> IoResult<()> {
     if !from.is_dir() {
         fail!("source isn't a directory");
     }
 
-    try!(mkdir(to, try!(stat(from)).perm));
+    try!(mkdir(to, try!(lstat(from)).perm));
     println!("created {}", to.display());
 
     for p in try!(readdir(from)).iter() {
         if ignore.contains(p) {
             continue;
         } else {
-            let pnew = replace_front(to, p, from.as_vec().len());
+            let mut vec = Vec::from_slice(to.as_vec());
+
+            if from != &Path::new(".") {
+                let n = from.as_vec().len();
+                vec.push_all( p.as_vec().slice_from(n) );
+            } else {
+                vec.push('/' as u8);
+                vec.push_all( p.as_vec() );
+            };
+
+            let pnew = Path::new(vec);
+
             if p.is_dir() {
                 try!(copy_dir_ignore(p, &pnew, ignore));
             } else {
@@ -39,9 +40,9 @@ fn copy_dir_ignore(from: &Path, to: &Path, ignore: &HashSet<Path>) -> IoResult<(
 
 
 fn main() {
-    //let path = Path::new(".");
+    let curr = Path::new(".");
+    let ig_path = Path::new(".igno");
     let mut ignore = HashSet::new();
-    ignore.insert(Path::new(".igno"));
-    ignore.insert(Path::new(".git"));
-    println!("{}", copy_dir_ignore(&Path::new("foo"), &Path::new("bar"), &ignore));
+    ignore.insert(ig_path.clone());
+    println!("{}", copy_dir_ignore(&curr, &ig_path, &ignore));
 }
