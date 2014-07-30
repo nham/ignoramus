@@ -18,17 +18,12 @@ fn copy_dir_ignore(from: &Path, to: &Path, create: bool, ignore: &HashSet<Path>)
         if ignore.contains(p) {
             continue;
         } else {
-            let mut vec = Vec::from_slice(to.as_vec());
-
-            if from != &Path::new(".") {
+            let pnew = if from != &Path::new(".") {
                 let n = from.as_vec().len();
-                vec.push_all( p.as_vec().slice_from(n) );
+                to.join(p.as_vec().slice_from(n+1)) // n+1 for trailing slash
             } else {
-                vec.push('/' as u8);
-                vec.push_all( p.as_vec() );
+                to.join(p.as_vec())
             };
-
-            let pnew = Path::new(vec);
 
             if p.is_dir() {
                 try!(copy_dir_ignore(p, &pnew, true, ignore));
