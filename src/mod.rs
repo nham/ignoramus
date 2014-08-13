@@ -2,7 +2,11 @@ use std::io;
 use std::io::IoResult;
 use std::io::fs::{readdir, copy, lstat, mkdir};
 use std::collections::HashSet;
+use std::os;
 
+// copies directory `from` to directory `to`. all of the files under `from`
+// will show up under `to`. Optionally creates `to` as well. Optionally takes
+// a collection of Paths that should be ignored in the `from` directory
 fn copy_dir_ignore(from: &Path, to: &Path, create: bool, ignore: &HashSet<Path>) -> IoResult<()> {
     if !from.is_dir() {
         fail!("source isn't a directory");
@@ -33,11 +37,10 @@ fn copy_dir_ignore(from: &Path, to: &Path, create: bool, ignore: &HashSet<Path>)
 // If the .igno directory already exists, return false. If it was successfully
 // created, return true. Otherwise an error is returned
 fn igno_init() -> IoResult<bool> {
-    let igno = Path::new(".igno");
-    if igno.is_dir() {
+    if igno_is_init() {
         Ok(false)
     } else {
-        try!(mkdir(&igno, io::UserDir));
+        try!(mkdir(&Path::new(".igno"), io::UserDir));
         Ok(true)
     }
 }
@@ -66,8 +69,12 @@ fn get_highest_numdir(path: &Path) -> IoResult<Option<uint>> {
     Ok(highest)
 }
 
+fn igno_is_init() -> bool {
+    Path::new(".igno").is_dir()
+}
 
-fn main() {
+
+fn snapshot() {
     let curr = Path::new(".");
     let ig_path = Path::new(".igno");
 
@@ -89,4 +96,36 @@ fn main() {
     let mut ignore = HashSet::new();
     ignore.insert(ig_path.clone());
     println!("{}", copy_dir_ignore(&curr, &ig_path.join(next_rev.to_string()), true, &ignore));
+}
+
+
+enum Command {
+    Init,
+    Snapshot,
+}
+
+fn main() {
+    let args = os::args();
+
+    let cmd = if args.len() > 2 {
+        fail!("Invalid arguments");
+    } else if args.len() == 2 {
+        if args[1].equiv(&"init") {
+            Init
+        } else {
+            fail!("Command not recognized");
+        }
+    } else {
+        // TODO: check if initialized before trying to snapshot
+        if !igno_is_init() {
+            fail!("This is not an ignoramus repository");
+        } else {
+            Snapshot
+        }
+    };
+
+    match cmd {
+        Init => {},
+        Snapshot => {},
+    }
 }
