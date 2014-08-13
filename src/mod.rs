@@ -74,28 +74,21 @@ fn igno_is_init() -> bool {
 }
 
 
-fn snapshot() {
+fn snapshot() -> IoResult<()> {
     let curr = Path::new(".");
     let ig_path = Path::new(".igno");
 
-    match igno_init() {
-        Err(e) => println!("{}", e),
-        Ok(false) => {},
-        Ok(true) => println!("Created .igno"),
-    }
-
-
     let next_rev = match get_highest_numdir(&ig_path) {
-        Err(e) => { println!("{}", e); return; },
+        Err(e) => return Err(e),
         Ok(None) => 0u,
         Ok(Some(n)) => n+1,
     };
 
-    println!("{}", next_rev);
-
     let mut ignore = HashSet::new();
     ignore.insert(ig_path.clone());
-    println!("{}", copy_dir_ignore(&curr, &ig_path.join(next_rev.to_string()), true, &ignore));
+
+    let snapshot_path = ig_path.join(next_rev.to_string());
+    copy_dir_ignore(&curr, &snapshot_path, true, &ignore)
 }
 
 
@@ -116,7 +109,6 @@ fn main() {
             fail!("Command not recognized");
         }
     } else {
-        // TODO: check if initialized before trying to snapshot
         if !igno_is_init() {
             fail!("This is not an ignoramus repository");
         } else {
@@ -125,7 +117,16 @@ fn main() {
     };
 
     match cmd {
-        Init => {},
-        Snapshot => {},
+        Init =>
+            match igno_init() {
+                Err(e) => println!("Error: {}", e),
+                Ok(false) => println!("Repository already exists."),
+                Ok(true) => println!("Initialized empty ignoramus repository"),
+            },
+        Snapshot =>
+            match snapshot() {
+                Err(e) => println!("Error: {}", e),
+                Ok(_) => println!("Snapshot created"),
+            }
     }
 }
