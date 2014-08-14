@@ -156,6 +156,13 @@ fn main() {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Snapshot created"),
             },
-        Checkout(n) => fail!("oops. unimplemented"),
+        Checkout(n) => {
+            let copy = copy_dir_ignore(&Path::new(".igno").join(n.to_string()), &Path::new("."), false, &HashSet::new());
+            match copy {
+                Err(e) => println!("Error: {}", e),
+                Ok(_) => println!("Snapshot checked out"),
+
+            }
+        },
     }
 }
