@@ -55,6 +55,30 @@ enum Command {
     Checkout(uint),
 }
 
+fn exec(cmd: Command) {
+    match cmd {
+        Init =>
+            match igno_init() {
+                Err(e) => println!("Error: {}", e),
+                Ok(false) => println!("Repository already exists."),
+                Ok(true) => println!("Initialized empty ignoramus repository"),
+            },
+        Snapshot =>
+            match snapshot() {
+                Err(e) => println!("Error: {}", e),
+                Ok(_) => println!("Snapshot created"),
+            },
+        Checkout(n) => {
+            let copy = copy_dir_ignore(&Path::new(".igno").join(n.to_string()), &Path::new("."), false, &HashSet::new());
+            match copy {
+                Err(e) => println!("Error: {}", e),
+                Ok(_) => println!("Snapshot checked out"),
+
+            }
+        },
+    }
+}
+
 fn main() {
     let args = os::args();
 
@@ -94,25 +118,5 @@ fn main() {
         Some(c) => c,
     };
 
-    match cmd {
-        Init =>
-            match igno_init() {
-                Err(e) => println!("Error: {}", e),
-                Ok(false) => println!("Repository already exists."),
-                Ok(true) => println!("Initialized empty ignoramus repository"),
-            },
-        Snapshot =>
-            match snapshot() {
-                Err(e) => println!("Error: {}", e),
-                Ok(_) => println!("Snapshot created"),
-            },
-        Checkout(n) => {
-            let copy = copy_dir_ignore(&Path::new(".igno").join(n.to_string()), &Path::new("."), false, &HashSet::new());
-            match copy {
-                Err(e) => println!("Error: {}", e),
-                Ok(_) => println!("Snapshot checked out"),
-
-            }
-        },
-    }
+    exec(cmd);
 }
