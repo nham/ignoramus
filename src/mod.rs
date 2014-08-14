@@ -18,12 +18,11 @@ fn igno_init() -> IoResult<bool> {
         try!(mkdir(&ig_path, io::UserDir));
         let head_path = ig_path.join("head");
 
-        let mut file = match File::create(&head_path) {
+        match File::create(&head_path) {
             Err(e) => fail!("Couldn't create file: {}", e),
-            Ok(file) => file,
-        };
+            Ok(_) => {},
+        }
 
-        try!(file.write_str("0\n"));
         Ok(true)
     }
 }
