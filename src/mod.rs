@@ -86,7 +86,10 @@ fn snapshot() -> IoResult<()> {
     let curr = Path::new(".");
     let ig_path = Path::new(".igno");
 
-    let next_rev = get_next_snapshot_num();
+    let next_rev = match get_next_snapshot_num() {
+        Err(e) => return Err(e),
+        Ok(n) => n,
+    };
 
     let mut ignore = HashSet::new();
     ignore.insert(ig_path.clone());
