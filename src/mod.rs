@@ -10,20 +10,14 @@ mod util;
 
 // If the .igno directory already exists, return false. If it was successfully
 // created, return true. Otherwise an error is returned
-fn igno_init() -> IoResult<bool> {
-    if igno_is_init() {
-        Ok(false)
-    } else {
-        let ig_path = Path::new(".igno");
-        try!(mkdir(&ig_path, io::UserDir));
-        let head_path = ig_path.join("head");
+fn igno_init() -> IoResult<()> {
+    let ig_path = Path::new(".igno");
+    try!(mkdir(&ig_path, io::UserDir));
+    let head_path = ig_path.join("head");
 
-        match File::create(&head_path) {
-            Err(e) => fail!("Couldn't create file: {}", e),
-            Ok(_) => {},
-        }
-
-        Ok(true)
+    match File::create(&head_path) {
+        Err(e) => Err(e),
+        Ok(_) => Ok(()),
     }
 }
 
@@ -54,7 +48,7 @@ fn update_head(n: uint) -> IoResult<()> {
 }
 
 
-fn snapshot() -> IoResult<()> {
+fn commit(message: String) -> IoResult<()> {
     let curr = Path::new(".");
     let ig_path = Path::new(".igno");
 
@@ -67,7 +61,16 @@ fn snapshot() -> IoResult<()> {
     ignore.insert(ig_path.clone());
 
     let snapshot_path = ig_path.join(next_rev.to_string());
-    try!(copy_dir_ignore(&curr, &snapshot_path, true, &ignore));
+    let tree_path = snapshot_path.join("tree");
+    try!(mkdir(&snapshot_path, io::UserDir));
+    try!(copy_dir_ignore(&curr, &tree_path, true, &ignore));
+
+    // Write snapshot metadata (just commit message at the moment)
+    match File::create(&snapshot_path.join("meta")) {
+        Err(e) => fail!("Couldn't create meta file: {}", e),
+        Ok(mut file) => try!(file.write_str( (message + "\n").as_slice() )),
+    }
+
     update_head(next_rev)
 }
 
@@ -84,37 +87,48 @@ fn checkout(n: uint) -> IoResult<()> {
 
 enum Command {
     Init,
-    Snapshot,
+    Commit(String),
     Checkout(uint),
     CheckoutLatest,
 }
 
 fn exec(cmd: Command) {
+    // the only command we can execute when it's not already a repo is init
+    match cmd {
+        Init =>
+            if igno_is_init() {
+                println!("Current directory is already an ignoramus repository");
+                return
+            },
+        _ =>
+            if !igno_is_init() {
+                println!("Current directory is not an ignoramus repository");
+                return
+            },
+    }
+
     match cmd {
         Init =>
             match igno_init() {
                 Err(e) => println!("Error: {}", e),
-                Ok(false) => println!("Repository already exists."),
-                Ok(true) => println!("Initialized empty ignoramus repository"),
+                Ok(_) => println!("Initialized empty ignoramus repository"),
             },
-        Snapshot =>
-            match snapshot() {
+        Commit(s) =>
+            match commit(s) {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Snapshot created"),
             },
-        Checkout(n) => {
+        Checkout(n) =>
             match checkout(n) {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Snapshot checked out"),
-            }
-        },
-        CheckoutLatest => {
+            },
+        CheckoutLatest =>
             match get_highest_snapshot_num() {
                 Err(e) => println!("Error: {}", e),
                 Ok(None) => println!("There aren't any snapshots to check out."),
                 Ok(Some(n)) => exec(Checkout(n)),
-            }
-        },
+            },
     }
 }
 
@@ -134,6 +148,8 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
                         Some(n) => Ok(Checkout(n)),
                     }
                 }
+            } else if args[0].equiv(&"commit") {
+                Ok(Commit(args[1].to_string()))
             } else {
                 Err(cnr)
             },
@@ -142,12 +158,6 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
                 Ok(Init)
             } else {
                 Err(cnr)
-            },
-        0 =>
-            if igno_is_init() {
-                Ok(Snapshot)
-            } else {
-                Err("This is not an ignoramus repository")
             },
         _ => Err(cnr),
     }
