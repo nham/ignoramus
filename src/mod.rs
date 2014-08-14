@@ -99,25 +99,46 @@ fn snapshot() -> IoResult<()> {
 enum Command {
     Init,
     Snapshot,
+    Checkout(uint),
 }
 
 fn main() {
     let args = os::args();
 
-    let cmd = if args.len() > 2 {
-        fail!("Command not recognized");
-    } else if args.len() == 2 {
-        if args[1].equiv(&"init") {
-            Init
-        } else {
-            fail!("Command not recognized");
+    let mut cmd = None;
+    if args.len() == 3 {
+        if args[1].equiv(&"checkout") {
+            if args[2].equiv(&"latest") {
+                match get_highest_numdir(&Path::new(".igno")) {
+                    Err(e) => fail!("{}", e),
+                    Ok(None) => fail!("No snapshots have been made yet."),
+                    Ok(Some(n)) => cmd = Some(Checkout(n)),
+                }
+            } else {
+                let d: Option<uint> = from_str(args[2].as_slice());
+                match d {
+                    None => {},
+                    Some(n) => cmd = Some(Checkout(n)),
+                }
+            }
+
+            if cmd.is_none() {
+                fail!("Argument to 'checkout' must either be an integer or 'latest'");
+            }
         }
-    } else {
+    } else if args.len() == 2 && args[1].equiv(&"init") {
+        cmd = Some(Init);
+    } else if args.len() == 1 {
         if !igno_is_init() {
             fail!("This is not an ignoramus repository");
         } else {
-            Snapshot
+            cmd = Some(Snapshot);
         }
+    }
+
+    let cmd = match cmd {
+        None => fail!("Command not recognized"),
+        Some(c) => c,
     };
 
     match cmd {
@@ -131,6 +152,7 @@ fn main() {
             match snapshot() {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Snapshot created"),
-            }
+            },
+        Checkout(n) => fail!("oops. unimplemented"),
     }
 }
