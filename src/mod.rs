@@ -2,7 +2,7 @@ use util::{copy_dir_ignore, get_highest_numdir};
 
 use std::io;
 use std::io::IoResult;
-use std::io::fs::mkdir;
+use std::io::fs::{mkdir, File};
 use std::collections::HashSet;
 use std::os;
 
@@ -14,7 +14,16 @@ fn igno_init() -> IoResult<bool> {
     if igno_is_init() {
         Ok(false)
     } else {
-        try!(mkdir(&Path::new(".igno"), io::UserDir));
+        let ig_path = Path::new(".igno");
+        try!(mkdir(&ig_path, io::UserDir));
+        let head_path = ig_path.join("head");
+
+        let mut file = match File::create(&head_path) {
+            Err(e) => fail!("Couldn't create file: {}", e),
+            Ok(file) => file,
+        };
+
+        try!(file.write_str("0\n"));
         Ok(true)
     }
 }
@@ -31,6 +40,16 @@ fn igno_is_init() -> bool {
     Path::new(".igno").is_dir()
 }
 
+fn update_head(n: uint) -> IoResult<()> {
+    let head_path = Path::new(".igno").join("head");
+    let mut file = match File::open_mode(&head_path, io::Open, io::Write) {
+        Err(e) => return Err(e),
+        Ok(file) => file,
+    };
+
+    file.write_str( (n.to_string() + "\n").as_slice() )
+}
+
 
 fn snapshot() -> IoResult<()> {
     let curr = Path::new(".");
@@ -45,7 +64,18 @@ fn snapshot() -> IoResult<()> {
     ignore.insert(ig_path.clone());
 
     let snapshot_path = ig_path.join(next_rev.to_string());
-    copy_dir_ignore(&curr, &snapshot_path, true, &ignore)
+    try!(copy_dir_ignore(&curr, &snapshot_path, true, &ignore));
+    update_head(next_rev)
+}
+
+
+fn checkout(n: uint) -> IoResult<()> {
+    let snap_path = Path::new(".igno").join(n.to_string());
+    let curr = Path::new(".");
+    match copy_dir_ignore(&snap_path, &curr, false, &HashSet::new()) {
+        Err(e) => Err(e),
+        Ok(_) => update_head(n),
+    }
 }
 
 
@@ -69,8 +99,7 @@ fn exec(cmd: Command) {
                 Ok(_) => println!("Snapshot created"),
             },
         Checkout(n) => {
-            let copy = copy_dir_ignore(&Path::new(".igno").join(n.to_string()), &Path::new("."), false, &HashSet::new());
-            match copy {
+            match checkout(n) {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Snapshot checked out"),
 
