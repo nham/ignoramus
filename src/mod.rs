@@ -69,6 +69,14 @@ fn get_highest_numdir(path: &Path) -> IoResult<Option<uint>> {
     Ok(highest)
 }
 
+fn get_next_snapshot_num() -> IoResult<uint> {
+    match get_highest_numdir(&Path::new(".igno")) {
+        Err(e) => Err(e),
+        Ok(None) => Ok(0u),
+        Ok(Some(n)) => Ok(n+1),
+    }
+}
+
 fn igno_is_init() -> bool {
     Path::new(".igno").is_dir()
 }
@@ -78,11 +86,7 @@ fn snapshot() -> IoResult<()> {
     let curr = Path::new(".");
     let ig_path = Path::new(".igno");
 
-    let next_rev = match get_highest_numdir(&ig_path) {
-        Err(e) => return Err(e),
-        Ok(None) => 0u,
-        Ok(Some(n)) => n+1,
-    };
+    let next_rev = get_next_snapshot_num();
 
     let mut ignore = HashSet::new();
     ignore.insert(ig_path.clone());
@@ -101,7 +105,7 @@ fn main() {
     let args = os::args();
 
     let cmd = if args.len() > 2 {
-        fail!("Invalid arguments");
+        fail!("Command not recognized");
     } else if args.len() == 2 {
         if args[1].equiv(&"init") {
             Init
