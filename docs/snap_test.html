@@ -1,10 +1,13 @@
-var canvas = new fabric.Canvas('c');
+<!doctype html>
+<html>
+    <head>
+        <title>aaa</title>
+    <script src="snap.svg-min.js"></script>
+    </head>
+<body>
+    <svg id="svg" width="600" height="600" style="border: 1px solid #333"></svg>
+    <script>
 
-
-// start is a dictionary { x: <number>, y: <number> }
-// i, j are numbers
-// I'm using "matrix coordinates" here. if (i, j) is a coordinate
-// pair, i is the row and j is the column
 var coord_to_pos = function(start, i, j) {
     var h_spacing = 60;
     var v_spacing = 60;
@@ -13,58 +16,54 @@ var coord_to_pos = function(start, i, j) {
     };
 };
 
-var grid_dots = function(start, rows, cols) {
-    var circs = [];
+var draw_line = function(s, from_x, from_y, to_x, to_y) {
+    var p = s.line(from_x, from_y, to_x, to_y);
+    p.attr({
+        fill: "#000"
+       ,stroke: "#000"
+       ,strokeWidth: 2
+    });
+}
 
+var s = Snap("#svg");
+var black = "#222";
+
+var grid_dots = function(start, rows, cols) {
     for (var i = 0; i < rows; i++) {
         for (var j = 0; j < cols; j++) {
             var pos = coord_to_pos(start, i, j);
-            circs.push(new fabric.Circle({
-                radius: 5, fill: 'black', left: pos.x, top: pos.y,
-                originX: "center", originY: "center",
-            }));
+            var bigCircle = s.circle(pos.x, pos.y, 5);
+            bigCircle.attr({
+                fill: black
+               ,stroke: black
+               ,strokeWidth: 3
+            });
         }
-    }
-
-    for (var i = 0; i < circs.length; i++) {
-        canvas.add(circs[i]);
     }
 };
 
 var grid_lines = function(start, rows, cols) {
-    var lines = [];
-
     for (var i = 0; i < rows; i++) {
         for (var j = 0; j < cols; j++) {
             var pos = coord_to_pos(start, i, j);
 
             if (i !== rows - 1) {
                 var posr = coord_to_pos(start, i+1, j);
-                lines.push(new fabric.Line([pos.x, pos.y, posr.x, posr.y], {
-                    fill: 'black', stroke: 'grey', strokeWidth: 2
-                }));
+                draw_line(s, pos.x, pos.y, posr.x, posr.y);
             }
 
             if (j !== cols - 1) {
                 var posb = coord_to_pos(start, i, j+1);
-                lines.push(new fabric.Line([pos.x, pos.y, posb.x, posb.y], {
-                    fill: 'black', stroke: 'grey', strokeWidth: 2
-                }));
+                draw_line(s, pos.x, pos.y, posb.x, posb.y);
             }
         }
-    }
-
-    for (var i = 0; i < lines.length; i++) {
-        canvas.add(lines[i]);
     }
 };
 
 var diag_line = function(start, coord1, coord2) {
     var pos1 = coord_to_pos(start, coord1.x, coord1.y);
     var pos2 = coord_to_pos(start, coord2.x, coord2.y);
-    canvas.add(new fabric.Line([pos1.x, pos1.y, pos2.x, pos2.y], {
-        fill: 'black', stroke: 'grey', strokeWidth: 2
-    }));
+    draw_line(s, pos1.x, pos1.y, pos2.x, pos2.y);
 }
 
 // start is an object {x: <canvas pos>, y: <canvas pos>}
@@ -83,5 +82,8 @@ var grid = function(start, rows, cols, diags) {
     grid_dots(start, rows, cols);
 };
 
-var grid_start = { x: 50, y: 50 };
+var grid_start = {x: 49.5, y: 49.5};
 grid(grid_start, 7, 5, [[1, 2], [3,1]]);
+    </script>
+</body>
+</html>
