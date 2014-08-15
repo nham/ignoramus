@@ -10,8 +10,15 @@
     <script>
 
 var s = Snap("#svg");
-var black = "#222";
 
+// it's 2014 and I'm manually comparing arrays for equality. Thanks, Javascript
+var arrays_equal = function(a, b) {
+    if (a.length !== b.length) return false;
+    for(var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false
+    }
+    return true;
+};
 
 // start is an object {x: <canvas pos>, y: <canvas pos>}
 // rows/cols are numbers
@@ -32,16 +39,88 @@ var grid = function(start, rows, cols, diags) {
 
     draw_grid_dots(s, start, rows, cols);
 
-    var anim_seq = [lines_grid.right[0][0], lines_grid.right[0][1],
-                    lines_grid.right[0][2], lines_grid.right[1][1],
-                    lines_grid.right[1][2], lines_grid.right[1][3]];
-    anim_seq = anim_seq.concat(diag_lines);
+    var r = function(i, j) {
+        return lines_grid.right[i][j];
+    };
+
+    var d = function(i, j) {
+        return lines_grid.down[i][j];
+    };
+
+    var diag = function(i, j) {
+        var x = -1;
+        for(var k = 0; k < diags.length; k++) {
+            if(arrays_equal(diags[k], [i, j])) {
+                x = k;
+            }
+        }
+
+        if(x !== -1) {
+            return diag_lines[x];
+        } else {
+            return null;
+        }
+    };
+
+    var anim_seq = [
+        // level 1
+        // discover and visit (0, 1) and (1, 0)
+        r(0, 0), d(0, 0),
+
+        // level 2
+        // discover and visit (0, 2), (1, 1), (2, 0)
+        r(0, 1), d(0, 1),
+        d(1, 0),
+
+        // level 3
+        // discover and visit (0, 3), (1, 2), (2, 1), (3, 0)
+        r(0,2), d(0, 2),
+        d(1, 1),
+        d(2, 0),
+
+        // level 4
+        // discover and visit (1, 4), (2, 3), (2, 2), (3, 1), (4, 0)
+        diag(0, 3),
+        diag(1, 2),
+        r(2,1), d(2, 1),
+        d(3, 0),
+
+        // level 5
+        // discover and visit (1,5), (2,4), (3,3), (3,2), (4,2), (4,1), (5,0)
+        r(1, 4), d(1, 4),
+        d(2, 3),
+        d(2, 2),
+        diag(3, 1),
+        r(4, 0), d(4, 0),
+
+        // level 6
+        // discover and visit (1,6), (2,5), (3,4), (4,4), (4,3), (5,2), (5,1),
+        //                    (6,0)
+        r(1, 5), d(1, 5),
+        d(2, 4),
+        diag(3, 3),
+        r(4, 2), d(4, 2),
+        d(4, 1),
+        d(5, 0),
+
+        // level 7
+        // discover and visit (1,7), (2,6), (3,5), (5,5), (5,3), (6,2), (6,1),
+        //                    (7,0)
+        r(1,6), d(1,6),
+        d(2, 5),
+        diag(4, 4),
+        d(4, 3),
+        d(5, 2),
+        d(5, 1),
+        d(6, 0)
+                    ];
 
     animation_sequencer(anim_seq)();
 };
 
-var grid_start = {x: 29.5, y: 29.5};
-grid(grid_start, 10, 9, [[1, 2], [3, 1], [4, 4], [0, 3], [6, 7], [8, 3]]);
+var grid_start = {x: 30, y: 30};
+grid(grid_start, 10, 9, [[1, 2], [3, 1], [3, 3], [4, 4], [0, 3], [6, 7],
+                         [8, 3], [2, 6]]);
     </script>
 </body>
 </html>
