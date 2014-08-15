@@ -6,66 +6,12 @@
     </head>
 <body>
     <svg id="svg" width="600" height="600" style="border: 1px solid #333"></svg>
+    <script src="diffdraw.js"></script>
     <script>
-
-var coord_to_pos = function(start, i, j) {
-    var h_spacing = 60;
-    var v_spacing = 60;
-    return { x: start.x + h_spacing*j,
-             y: start.y + v_spacing*i
-    };
-};
-
-var draw_line = function(s, from_x, from_y, to_x, to_y) {
-    var p = s.line(from_x, from_y, to_x, to_y);
-    p.attr({
-        fill: "#000"
-       ,stroke: "#000"
-       ,strokeWidth: 2
-    });
-    return p;
-}
 
 var s = Snap("#svg");
 var black = "#222";
 
-var grid_dots = function(start, rows, cols) {
-    for (var i = 0; i < rows; i++) {
-        for (var j = 0; j < cols; j++) {
-            var pos = coord_to_pos(start, i, j);
-            var bigCircle = s.circle(pos.x, pos.y, 5);
-            bigCircle.attr({
-                fill: black
-               ,stroke: black
-               ,strokeWidth: 3
-            });
-        }
-    }
-};
-
-var grid_lines = function(start, rows, cols) {
-    for (var i = 0; i < rows; i++) {
-        for (var j = 0; j < cols; j++) {
-            var pos = coord_to_pos(start, i, j);
-
-            if (i !== rows - 1) {
-                var posr = coord_to_pos(start, i+1, j);
-                draw_line(s, pos.x, pos.y, posr.x, posr.y);
-            }
-
-            if (j !== cols - 1) {
-                var posb = coord_to_pos(start, i, j+1);
-                draw_line(s, pos.x, pos.y, posb.x, posb.y);
-            }
-        }
-    }
-};
-
-var diag_line = function(start, coord1, coord2) {
-    var pos1 = coord_to_pos(start, coord1.x, coord1.y);
-    var pos2 = coord_to_pos(start, coord2.x, coord2.y);
-    return draw_line(s, pos1.x, pos1.y, pos2.x, pos2.y);
-}
 
 // start is an object {x: <canvas pos>, y: <canvas pos>}
 // rows/cols are numbers
@@ -73,18 +19,19 @@ var grid = function(start, rows, cols, diags) {
     diags = diags || [];
 
     var line_start = {x: start.x - 0.5, y: start.y - 0.5};
-    grid_lines(line_start, rows, cols);
+
+    var lines_grid = draw_grid_lines(s, line_start, rows, cols);
 
     var diag_lines =  [];
     for (var i = 0; i < diags.length; i++) {
         diag_lines.push(
-            diag_line(line_start, {x: diags[i][0], y: diags[i][1]},
+            draw_diag_line(s, line_start, {x: diags[i][0], y: diags[i][1]},
                                   {x: diags[i][0]+1, y: diags[i][1]+1})
         );
     }
 
-    grid_dots(start, rows, cols);
-    var fill_stroke_blue = {fill: "#0000ff", stroke: "#0000ff"};
+    draw_grid_dots(s, start, rows, cols);
+    var fill_stroke = {fill: "#ff6d1f", stroke: "#ff2d1f"};
 
     var make_callback = function(n) {
         if(n === diag_lines.length) {
@@ -98,14 +45,14 @@ var grid = function(start, rows, cols, diags) {
 
     var make_non_terminal_callback = function(n) {
         return function() {
-            diag_lines[n].animate(fill_stroke_blue, delay, null,
+            diag_lines[n].animate(fill_stroke, delay, null,
                                   make_callback(n+1));
         };
     };
 
     var make_terminal_callback = function(n) {
         return function() {
-            diag_lines[n].animate(fill_stroke_blue, delay);
+            diag_lines[n].animate(fill_stroke, delay);
         };
     };
 
