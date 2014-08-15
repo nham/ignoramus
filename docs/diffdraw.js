@@ -1,3 +1,6 @@
+// the 's' parameter seen throughout is the Snap.svg object
+
+
 var coord_to_pos = function(start, i, j) {
     var h_spacing = 60;
     var v_spacing = 60;
@@ -11,12 +14,13 @@ var draw_line = function(s, from_x, from_y, to_x, to_y) {
     p.attr({
         fill: "#000"
        ,stroke: "#000"
-       ,strokeWidth: 2
+       ,strokeWidth: 1
     });
     return p;
 }
 
 var draw_grid_dots = function(s, start, rows, cols) {
+    var black = "#222";
     for (var i = 0; i < rows; i++) {
         for (var j = 0; j < cols; j++) {
             var pos = coord_to_pos(start, i, j);
@@ -71,8 +75,8 @@ var draw_grid_lines = function(s, start, rows, cols) {
 // also the animation logic is currently hard-coded. to make this fully generic,
 // need to pass in an animation function of some sort. but i only need this!
 var animation_sequencer = function(seq) {
-    var delay = 600;
-    var fill_stroke = {fill: "#ff6d1f", stroke: "#ff2d1f"};
+    var delay = 150;
+    var fill_stroke = {fill: "#ff6d1f", stroke: "#ff2d1f", strokeWidth: 5};
 
     var make_non_terminal_callback = function(n) {
         return function() {
