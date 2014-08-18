@@ -25,6 +25,19 @@ fn igno_is_init() -> bool {
     Path::new(".igno").is_dir()
 }
 
+fn get_current() -> IoResult<uint> {
+    let head_path = Path::new(".igno").join("head");
+    let mut file = match File::open(&head_path) {
+        Err(e) => return Err(e),
+        Ok(file) => file,
+    };
+
+    match file.read_to_string() {
+        Err(e) => Err(e),
+        Ok(s) => Ok(from_str::<uint>(s.as_slice().slice_to(s.len() - 1)).unwrap()),
+    }
+}
+
 fn get_next_snapshot_num() -> IoResult<uint> {
     match get_highest_snapshot_num() {
         Err(e) => Err(e),
@@ -87,6 +100,7 @@ fn checkout(n: uint) -> IoResult<()> {
 
 enum Command {
     Init,
+    Current,
     Commit(String),
     Checkout(uint),
     CheckoutLatest,
@@ -112,6 +126,11 @@ fn exec(cmd: Command) {
             match igno_init() {
                 Err(e) => println!("Error: {}", e),
                 Ok(_) => println!("Initialized empty ignoramus repository"),
+            },
+        Current =>
+            match get_current() {
+                Err(e) => println!("Error: {}", e),
+                Ok(n) => println!("Current revision: {}", n),
             },
         Commit(s) =>
             match commit(s) {
@@ -156,6 +175,7 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
 
         1 => match args[0].as_slice() {
             "init" => Ok(Init),
+            "current" => Ok(Current),
             _ => Err(cnr),
         },
 
