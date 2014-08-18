@@ -136,8 +136,9 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
     let cnr = "Command not recognized.";
     let checkout_arg = "Argument to 'checkout' must either be an integer or 'latest'";
     match args.len() {
-        2 =>
-            if args[0].equiv(&"checkout") {
+
+        2 => match args[0].as_slice() {
+            "checkout" => {
                 if args[1].equiv(&"latest") {
                     Ok(CheckoutLatest)
                 } else {
@@ -148,17 +149,16 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
                         Some(n) => Ok(Checkout(n)),
                     }
                 }
-            } else if args[0].equiv(&"commit") {
-                Ok(Commit(args[1].to_string()))
-            } else {
-                Err(cnr)
             },
-        1 =>
-            if args[0].equiv(&"init") {
-                Ok(Init)
-            } else {
-                Err(cnr)
-            },
+            "commit" => Ok(Commit(args[1].to_string())),
+            _ => Err(cnr),
+        },
+
+        1 => match args[0].as_slice() {
+            "init" => Ok(Init),
+            _ => Err(cnr),
+        },
+
         _ => Err(cnr),
     }
 }
