@@ -154,31 +154,28 @@ fn exec(cmd: Command) {
 fn parse_args(args: &[String]) -> Result<Command, &'static str> {
     let cnr = "Command not recognized.";
     let checkout_arg = "Argument to 'checkout' must either be an integer or 'latest'";
-    match args.len() {
 
-        2 => match args[0].as_slice() {
-            "checkout" => {
-                if args[1].equiv(&"latest") {
-                    Ok(CheckoutLatest)
-                } else {
-                    // try to parse argument as uint
-                    let d: Option<uint> = from_str(args[1].as_slice());
-                    match d {
-                        None => Err(checkout_arg),
-                        Some(n) => Ok(Checkout(n)),
-                    }
+
+    if args.len() == 0 {
+        return Err("No command given.");
+    }
+
+    match (args[0].as_slice(), args.len()) {
+        ("checkout", 2) => {
+            if args[1].equiv(&"latest") {
+                Ok(CheckoutLatest)
+            } else {
+                // try to parse argument as uint
+                let d: Option<uint> = from_str(args[1].as_slice());
+                match d {
+                    None => Err(checkout_arg),
+                    Some(n) => Ok(Checkout(n)),
                 }
-            },
-            "commit" => Ok(Commit(args[1].to_string())),
-            _ => Err(cnr),
+            }
         },
-
-        1 => match args[0].as_slice() {
-            "init" => Ok(Init),
-            "current" => Ok(Current),
-            _ => Err(cnr),
-        },
-
+        ("commit", 2) => Ok(Commit(args[1].to_string())),
+        ("init", 1) => Ok(Init),
+        ("current", 1) => Ok(Current),
         _ => Err(cnr),
     }
 }
