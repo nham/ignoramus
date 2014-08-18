@@ -152,9 +152,8 @@ fn exec(cmd: Command) {
 }
 
 fn parse_args(args: &[String]) -> Result<Command, &'static str> {
-    let cnr = "Command not recognized.";
     let checkout_arg = "Argument to 'checkout' must either be an integer or 'latest'";
-
+    let wna = "Wrong number of arguments.";
 
     if args.len() == 0 {
         return Err("No command given.");
@@ -173,10 +172,17 @@ fn parse_args(args: &[String]) -> Result<Command, &'static str> {
                 }
             }
         },
+        ("checkout", _) => Err(wna),
+
         ("commit", 2) => Ok(Commit(args[1].to_string())),
+        ("commit", _) => Err(wna),
+
         ("init", 1) => Ok(Init),
+        ("init", _) => Err(wna),
+
         ("current", 1) => Ok(Current),
-        _ => Err(cnr),
+        ("current", _) => Err(wna),
+        _ => Err("Command not recognized."),
     }
 }
 
@@ -184,7 +190,7 @@ fn main() {
     let args = os::args();
 
     match parse_args(args.slice_from(1)) {
-        Err(e) => fail!("{}", e),
+        Err(e) => println!("{}", e),
         Ok(c) => exec(c),
     }
 }
