@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+    <head>
+        <title>aaa</title>
+    <script src="snap.svg-min.js"></script>
+    </head>
+<body>
+    <svg id="svg" width="600" height="600" style="border: 1px solid #333"></svg>
+    <script src="diffdraw.js"></script>
+    <script>
+
+var s = Snap("#svg");
+
+// it's 2014 and I'm manually comparing arrays for equality. Thanks, Javascript
+var arrays_equal = function(a, b) {
+    if (a.length !== b.length) return false;
+    for(var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false
+    }
+    return true;
+};
+
+// start is an object {x: <canvas pos>, y: <canvas pos>}
+// rows/cols are numbers
+var grid = function(start, xstr, ystr) {
+    var rows = xstr.length + 1;
+    var cols = ystr.length + 1;
+
+    var line_start = {x: start.x - 0.5, y: start.y - 0.5};
+
+    var lines_grid = draw_grid_lines(s, line_start, rows, cols);
+
+
+    var diag_lines = [];
+    for (var i = 0; i < xstr.length; i++) {
+        diag_lines.push([]);
+        for (var j = 0; j < ystr.length; j++) {
+            if(x[i] === y[j]) {
+                diag_lines[i].push(
+                    draw_diag_line(s, line_start, {x: i, y: j},
+                                          {x: i+1, y: j+1})
+                );
+            } else {
+                diag_lines[i].push(null);
+            }
+        }
+    }
+    /*
+    var diag_lines =  [];
+    for (var i = 0; i < diags.length; i++) {
+        diag_lines.push(
+            draw_diag_line(s, line_start, {x: diags[i][0], y: diags[i][1]},
+                                  {x: diags[i][0]+1, y: diags[i][1]+1})
+        );
+    }
+    */
+
+    draw_grid_dots(s, start, rows, cols);
+
+    var r = function(i, j) {
+        return lines_grid.right[i][j];
+    };
+
+    var d = function(i, j) {
+        return lines_grid.down[i][j];
+    };
+
+    var diag = function(i, j) {
+        return diag_lines[i][j];
+    };
+
+    /// SES(x, y):
+    ///     (m, n) = (x.len(), y.len())
+    ///     S = new queue
+    ///     S.insert((0, 0))
+    ///     mark (0, 0) as discovered
+    ///     while S is not empty:
+    ///         (i, j) = S.pop()
+    ///
+    ///         if i == m and j == n:
+    ///             break
+    ///
+    ///         vec = [(i+1, j), (i, j+1)]
+    ///         if x_{i+1} = y_{j+1} 
+    ///         then vec.push((i+1, j+1))
+    ///         for w in vec:
+    ///             if w is not yet discovered
+    ///                 S.insert(w)
+    ///                 mark w as discovered
+    ///
+    ///     return the path from (0,0) to (m, n)
+    ///
+
+    // returns true if val is in arr, false otherwise
+    var contains = function(arr, val) {
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i][0] === val[0] && arr[i][1] === val[1]) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // computes the shortest edit script that transforms x into y, where x and y
+    // are lists of some kind (usually lists of lines in a file)
+    var ses = function(x, y) {
+        var m = x.length;
+        var n = y.length;
+        
+        // the nodes in the graph are labeled with pairs (i, j), which we call
+        // *coordinates* since the nodes are arranged in a grid. the coordinates
+        // range from (0, 0) to (m, n). since javascript lacks a tuple type, we
+        // use a list of length 2
+        var q = []; // a queue for visiting things.
+        var discovered = [];
+        discovered.push([0, 0]);
+        q.push([0, 0]);
+
+        var edges = [];
+
+        var z = 0; // index of next thing to pop from queue
+
+        while (q.length !== 0) {
+            var tmp = q[z];
+            var i = tmp[0];
+            var j = tmp[1];
+
+            if (i === m && j === n) {
+                break;
+            }
+
+            if (i < m) {
+                var to_check = [i+1, j];
+                if (!contains(discovered, to_check)) {
+                    q.push(to_check);
+                    discovered.push(to_check);
+                    edges.push(d(i,j));
+                }
+            }
+
+            if (j < n) {
+                var to_check = [i, j+1];
+                if (!contains(discovered, to_check)) {
+                    q.push(to_check);
+                    discovered.push(to_check);
+                    edges.push(r(i,j));
+                }
+            }
+
+            if (i < m && j < n && x[i] === y[j]) {
+                var to_check = [i+1, j+1];
+                if (!contains(discovered, to_check)) {
+                    q.push(to_check);
+                    discovered.push(to_check);
+                    edges.push(diag(i,j));
+                }
+            }
+
+            z += 1;
+        }
+
+        return edges;
+    };
+
+    var seq = ses(xstr, ystr);
+
+    animation_sequencer(seq)();
+};
+
+//var x = "acdabzaca";
+//var y = "zacabzd";
+
+var x = "cbabac";
+var y = "abcabba";
+
+
+var grid_start = {x: 30, y: 30};
+grid(grid_start, x, y);
+    </script>
+</body>
+</html>
