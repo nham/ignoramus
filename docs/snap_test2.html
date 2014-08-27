@@ -3,8 +3,22 @@
     <head>
         <title>aaa</title>
     <script src="snap.svg-min.js"></script>
+    <script src="jquery-2.1.1.min.js"></script>
     </head>
 <body>
+    <div id="form">
+        <ul>
+            <li>
+                <label for="x" style="width: 60px">x</label>
+                <input id="x" type="text" style="font-family: monospace; font-size: 24px"></input>
+            </li>
+            <li>
+                <label for="y" style="width: 60px">y</label>
+                <input id="y" type="text" style="font-family: monospace; font-size: 24px"></input>
+            </li>
+        </ul>
+        <button id="submit" type="submit">submit</button>
+    </div>
     <svg id="svg" width="600" height="600" style="border: 1px solid #333"></svg>
     <script src="diffdraw.js"></script>
     <script>
@@ -23,6 +37,8 @@ var arrays_equal = function(a, b) {
 // start is an object {x: <canvas pos>, y: <canvas pos>}
 // rows/cols are numbers
 var grid = function(start, xstr, ystr) {
+    s.clear();
+
     var rows = xstr.length + 1;
     var cols = ystr.length + 1;
 
@@ -35,7 +51,7 @@ var grid = function(start, xstr, ystr) {
     for (var i = 0; i < xstr.length; i++) {
         diag_lines.push([]);
         for (var j = 0; j < ystr.length; j++) {
-            if(x[i] === y[j]) {
+            if(xstr[i] === ystr[j]) {
                 diag_lines[i].push(
                     draw_diag_line(s, line_start, {x: i, y: j},
                                           {x: i+1, y: j+1})
@@ -163,19 +179,22 @@ var grid = function(start, xstr, ystr) {
     };
 
     var seq = ses(xstr, ystr);
-
     animation_sequencer(seq)();
 };
-
-//var x = "acdabzaca";
-//var y = "zacabzd";
 
 var x = "cbabac";
 var y = "abcabba";
 
+$("#x").val(x);
+$("#y").val(y);
 
-var grid_start = {x: 30, y: 30};
-grid(grid_start, x, y);
+var do_grid_stuff = function() {
+    var grid_start = {x: 30, y: 30};
+    grid(grid_start, $("#x").val(), $("#y").val());
+};
+
+$("#submit").on("click", do_grid_stuff);
+do_grid_stuff();
     </script>
 </body>
 </html>
